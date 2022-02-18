@@ -1,6 +1,0 @@
-User-Agent: *
-Disallow: /
-
-
-Sitemap: http://kostelsebotest.ru/sitemap.xml
-Host: kostelsebotest.ru

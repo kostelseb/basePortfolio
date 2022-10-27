@@ -95,9 +95,9 @@
                         }
                     })
                     if(searchRequest === '') {
-                        showTable('','','',false)
+                        showTable('','','',true)
                     }else {
-                        showTable(searchRequest,'','',false)
+                        showTable(searchRequest,'','',true)
                     }
                     checkElementForDelete('table_row')
                     searchRequest = ''
@@ -125,7 +125,7 @@
         return tag
     }
 
-    async function createTable() {
+     function createTable() {
         // let data = await tableData()
         checkElementForDelete('table')
         const container = getContainer('table_container')
@@ -136,6 +136,19 @@
         const tableHeaders = ['ID', 'Фамилия Имя Отчество', 'Дата и время создания', 'Последние изменения', 'Контакты', 'Действия' ]
         for (let i = 0; i < tableHeaders.length ; i++) {
             const tableHeader = createNewElement('th', ['table_header'], tableHeaders[i])
+            if(i === 0) {
+                tableHeader.classList.add('table_header_icon')
+                tableHeader.classList.add('sorted')
+            }
+            tableHeader.addEventListener('click', ()=> {
+                let tableHeaders = document.querySelectorAll('.table_header')
+                for(let tableHeader of tableHeaders) {
+                    if(tableHeader.classList.contains('table_header_icon')) {
+                        tableHeader.classList.remove('table_header_icon')
+                    }
+                }
+                tableHeader.classList.add('table_header_icon')
+            })
             // switch(i){
             //     case 0:
             //         tableHeader.addEventListener('click', ()=> {
@@ -152,7 +165,6 @@
             //         // tableHeader.addEventListener('click', eventForSort(tableHeader,'updateTime',data))
             //         break    
             // }
-
             tableHeadersRow.append(tableHeader)
         }
 
@@ -162,13 +174,11 @@
     function eventForSort(elementForEvent='',fieldToSort='',data) {
         elementForEvent.addEventListener('click',()=>{
             checkElementForDelete('table_row')
-            if(elementForEvent.classList.contains('reversed_sort')) {
-                data.sort(sortByField(fieldToSort, 'forward'))
-                elementForEvent.classList.toggle('reversed_sort')
-            } else {
+            data.sort(sortByField(fieldToSort, 'forward'))
+            if(elementForEvent.classList.contains('sorted')) {
                 data.sort(sortByField(fieldToSort, 'reverse'))
-                elementForEvent.classList.toggle('reversed_sort')
             }
+            elementForEvent.classList.toggle('sorted')
             showTable('', data,'',false)
         })
     }
@@ -211,14 +221,14 @@
     // sortedData используется для получения статических данных без запроса к серверу для сортировки и отрисовки данных. В остальных случаях можно опустить
     async function showTable(searchRequest = '', sortedData = '', startedSortedField, addEvent = true) {
         const data = await tableData(searchRequest, sortedData)
-        // const container = getContainer('table_container')
-        // const table = createTable(data, tableHeadersClasses)
+
         // console.log(data)
         if(startedSortedField !== '') {
             data.sort(sortByField(startedSortedField, 'forward'))
         }
-        const table = document.querySelector('table')
+        // const table = document.querySelector('table')
         if(addEvent === true) {
+            const table = createTable()
             const tableHeaderId = table.children[0].children[0]
             const tableHeaderFullname = table.children[0].children[1]
             const tableHeaderCreateTime = table.children[0].children[2]
@@ -227,137 +237,143 @@
             eventForSort(tableHeaderFullname, 'fullName', data)
             eventForSort(tableHeaderCreateTime, 'createTime', data)
             eventForSort(tableHeaderUpdateTime, 'updateTime', data)
-        } 
-        for(let i = 0; i < data.length; i++) {
-            let tr = createNewElement('tr', ['table_row'])
-            for(let j = 0; j < 6; j++) {
-                const td = document.createElement('td')
-                td.classList.add('td_table')
-                switch(j) {
-                    case 0 : 
-                        const id = createNewElement('p', ['table_td_value','table_id'], data[i].id)
-                        td.append(id)
-                        break
-                    case 1 :
-                        const fullName = createNewElement('p', ['table_td_value','table_fullname'], data[i].fullName)
-                        td.append(fullName)
-                        break
-                    case 2 :
-                        const createDateContainer = createNewElement('div', ['table_createdate'])
-                        const createdDate = createNewElement('p', ['table_td_value','table_date'], data[i].createTime.slice(0, 10))
-                        const createdTime = createNewElement('p', ['table_td_value','table_time'], data[i].createTime.slice(11))
-                        td.append(createDateContainer)
-                        createDateContainer.append(createdDate)
-                        createDateContainer.append(createdTime)
-                        break
-                    case 3 :
-                        const updateDateContainer = createNewElement('div', ['table_updatedate'])
-                        const updatedDate = createNewElement('p', ['table_td_value','table_date'], data[i].updateTime.slice(0, 10))
-                        const updatedTime = createNewElement('p', ['table_td_value','table_time'], data[i].updateTime.slice(11))
-                        td.append(updateDateContainer)
-                        updateDateContainer.append(updatedDate)
-                        updateDateContainer.append(updatedTime)
-                        break
-                    case 4 :
-                        const contactContainer = createNewElement('div', ['contact_container'])
-                        td.append(contactContainer)
-                        let counter = 0
-                        for (let k = 0; k < data[i].contacts.length; k++) {
-                            const tdContact = createNewElement('div', ['table_td_value','table_contact'])
-                            let tdContactValue
-                            let tdContactLink
-                            
-                            if(data[i].contacts[k].type === 'VK'){
-                                tdContactValue = createNewElement('span', ['table_contact_value'], 'VK:')
-                                tdContactLink = createNewElement('a', ['table_contact_link','table_contact_link_vk'], data[i].contacts[k].value)
-                                tdContactLink.setAttribute('href', data[i].contacts[k].value)
-                                tdContactLink.setAttribute('target', '_blank')
-                                tdContactValue.append(tdContactLink)
-                            } else if (data[i].contacts[k].type == 'facebook') {
-                                tdContactValue = createNewElement('span', ['table_contact_value'], 'FB:')
-                                tdContactLink = createNewElement('a', ['table_contact_link','table_contact_link_vk'], data[i].contacts[k].value)
-                                tdContactLink.setAttribute('href', data[i].contacts[k].value)
-                                tdContactLink.setAttribute('target', '_blank')
-                                tdContactValue.append(tdContactLink)
-                            } else {
-                                tdContactValue = createNewElement('div', ['table_contact_value'], data[i].contacts[k].value)
-                            }
-                            tdContact.append(tdContactValue)
-                            switch(data[i].contacts[k].type) {
-                                case 'phone' :
-                                    tdContact.classList.add('type_phone')
-                                    break
-                                case 'VK' :
-                                    tdContact.classList.add('type_VK')
-                                    break
-                                case 'facebook' :
-                                    tdContact.classList.add('type_facebook')
-                                    break
-                                case 'email' :
-                                    tdContact.classList.add('type_email')
-                                    break
-                                case 'extraPhone' :
-                                    tdContact.classList.add('type_extra_phone')
-                            }
-                            contactContainer.append(tdContact)
-                            if (contactContainer.children.length > 4) {
-                                tdContact.classList.add('contact_hidden')
-                                counter++
-                                if(k+1 == data[i].contacts.length) {
-                                    const showHiddenContacts = createNewElement('button', ['show_contacts_button'], `+${counter}`)
-                                    contactContainer.append(showHiddenContacts)
-                                    showHiddenContacts.addEventListener('click', (e)=> {
-                                        const contacts = e.path[1].children
-                                        for(let contact of contacts) {
-                                            contact.classList.remove('contact_hidden')
-                                        }
-                                        e.path[0].remove()
-                                    })
+            createTableValues(table)
+        } else {
+            const table = document.querySelector('table') 
+            createTableValues(table)
+        }
+        function createTableValues(table) {
+            for(let i = 0; i < data.length; i++) {
+                let tr = createNewElement('tr', ['table_row'])
+                for(let j = 0; j < 6; j++) {
+                    const td = document.createElement('td')
+                    td.classList.add('td_table')
+                    switch(j) {
+                        case 0 : 
+                            const id = createNewElement('p', ['table_td_value','table_id'], data[i].id)
+                            td.append(id)
+                            break
+                        case 1 :
+                            const fullName = createNewElement('p', ['table_td_value','table_fullname'], data[i].fullName)
+                            td.append(fullName)
+                            break
+                        case 2 :
+                            const createDateContainer = createNewElement('div', ['table_createdate'])
+                            const createdDate = createNewElement('p', ['table_td_value','table_date'], data[i].createTime.slice(0, 10))
+                            const createdTime = createNewElement('p', ['table_td_value','table_time'], data[i].createTime.slice(11))
+                            td.append(createDateContainer)
+                            createDateContainer.append(createdDate)
+                            createDateContainer.append(createdTime)
+                            break
+                        case 3 :
+                            const updateDateContainer = createNewElement('div', ['table_updatedate'])
+                            const updatedDate = createNewElement('p', ['table_td_value','table_date'], data[i].updateTime.slice(0, 10))
+                            const updatedTime = createNewElement('p', ['table_td_value','table_time'], data[i].updateTime.slice(11))
+                            td.append(updateDateContainer)
+                            updateDateContainer.append(updatedDate)
+                            updateDateContainer.append(updatedTime)
+                            break
+                        case 4 :
+                            const contactContainer = createNewElement('div', ['contact_container'])
+                            td.append(contactContainer)
+                            let counter = 0
+                            for (let k = 0; k < data[i].contacts.length; k++) {
+                                const tdContact = createNewElement('div', ['table_td_value','table_contact'])
+                                let tdContactValue
+                                let tdContactLink
+                                
+                                if(data[i].contacts[k].type === 'VK'){
+                                    tdContactValue = createNewElement('span', ['table_contact_value'], 'VK:')
+                                    tdContactLink = createNewElement('a', ['table_contact_link','table_contact_link_vk'], data[i].contacts[k].value)
+                                    tdContactLink.setAttribute('href', data[i].contacts[k].value)
+                                    tdContactLink.setAttribute('target', '_blank')
+                                    tdContactValue.append(tdContactLink)
+                                } else if (data[i].contacts[k].type == 'facebook') {
+                                    tdContactValue = createNewElement('span', ['table_contact_value'], 'FB:')
+                                    tdContactLink = createNewElement('a', ['table_contact_link','table_contact_link_vk'], data[i].contacts[k].value)
+                                    tdContactLink.setAttribute('href', data[i].contacts[k].value)
+                                    tdContactLink.setAttribute('target', '_blank')
+                                    tdContactValue.append(tdContactLink)
+                                } else {
+                                    tdContactValue = createNewElement('div', ['table_contact_value'], data[i].contacts[k].value)
+                                }
+                                tdContact.append(tdContactValue)
+                                switch(data[i].contacts[k].type) {
+                                    case 'phone' :
+                                        tdContact.classList.add('type_phone')
+                                        break
+                                    case 'VK' :
+                                        tdContact.classList.add('type_VK')
+                                        break
+                                    case 'facebook' :
+                                        tdContact.classList.add('type_facebook')
+                                        break
+                                    case 'email' :
+                                        tdContact.classList.add('type_email')
+                                        break
+                                    case 'extraPhone' :
+                                        tdContact.classList.add('type_extra_phone')
+                                }
+                                contactContainer.append(tdContact)
+                                if (contactContainer.children.length > 4) {
+                                    tdContact.classList.add('contact_hidden')
+                                    counter++
+                                    if(k+1 == data[i].contacts.length) {
+                                        const showHiddenContacts = createNewElement('button', ['show_contacts_button'], `+${counter}`)
+                                        contactContainer.append(showHiddenContacts)
+                                        showHiddenContacts.addEventListener('click', (e)=> {
+                                            const contacts = e.path[1].children
+                                            for(let contact of contacts) {
+                                                contact.classList.remove('contact_hidden')
+                                            }
+                                            e.path[0].remove()
+                                        })
+                                    }
                                 }
                             }
-                        }
-                        break
-                    case 5 :
-                        const buttonContainer = createNewElement('div', ['button_container'])
-                        const changeButton = createNewElement('button', ['table_td_value','table_change_button_pen', 'table_change_button'], data[i].buttons[0])
-                        changeButton.addEventListener('click', ()=>{
-                            checkElementForDelete('confirm_background')
-                            changeButton.classList.add('table_change_button_loadState')
-                            changeButton.classList.remove('table_change_button_pen')
-                            changeButton.setAttribute('disabled', '')
-                            setTimeout(()=>{
-                                chandeClientInformation(changeButton)
-                                changeButton.removeAttribute('disabled')
-                                changeButton.classList.remove('table_change_button_loadState')
-                                changeButton.classList.add('table_change_button_pen')
-                                if (data[i].contacts.length === 0) {
-                                    checkContactsNumber()
-                                }
-                            }, 300)
-                        })
-                        // changeButton.addEventListener('click', chandeClientInformation)
-                        buttonContainer.append(changeButton)
-                        const deleteButton = createNewElement('button', ['table_td_value','table_delete_button'], data[i].buttons[1])
-                        const userId = data[i].id
-                        deleteButton.addEventListener('click', ()=>{
-                            checkElementForDelete('change_user_form_container')
-                            deleteButton.classList.add('table_delete_button_loadState')
-                            deleteButton.classList.remove('table_delete_button_pen')
-                            deleteButton.setAttribute('disabled', '')
-                            setTimeout(()=>{
-                                confirmDelete(userId)
-                                deleteButton.removeAttribute('disabled')
-                                deleteButton.classList.remove('table_delete_button_loadState')
-                                deleteButton.classList.add('table_delete_button_pen')
-                            }, 300)
-                        })
-                        buttonContainer.append(deleteButton)
-                        td.append(buttonContainer)
-                        break
+                            break
+                        case 5 :
+                            const buttonContainer = createNewElement('div', ['button_container'])
+                            const changeButton = createNewElement('button', ['table_td_value','table_change_button_pen', 'table_change_button'], data[i].buttons[0])
+                            changeButton.addEventListener('click', ()=>{
+                                checkElementForDelete('confirm_background')
+                                changeButton.classList.add('table_change_button_loadState')
+                                changeButton.classList.remove('table_change_button_pen')
+                                changeButton.setAttribute('disabled', '')
+                                setTimeout(()=>{
+                                    chandeClientInformation(changeButton)
+                                    changeButton.removeAttribute('disabled')
+                                    changeButton.classList.remove('table_change_button_loadState')
+                                    changeButton.classList.add('table_change_button_pen')
+                                    if (data[i].contacts.length === 0) {
+                                        checkContactsNumber()
+                                    }
+                                }, 300)
+                            })
+                            // changeButton.addEventListener('click', chandeClientInformation)
+                            buttonContainer.append(changeButton)
+                            const deleteButton = createNewElement('button', ['table_td_value','table_delete_button'], data[i].buttons[1])
+                            const userId = data[i].id
+                            deleteButton.addEventListener('click', ()=>{
+                                checkElementForDelete('change_user_form_container')
+                                deleteButton.classList.add('table_delete_button_loadState')
+                                deleteButton.classList.remove('table_delete_button_pen')
+                                deleteButton.setAttribute('disabled', '')
+                                setTimeout(()=>{
+                                    confirmDelete(userId)
+                                    deleteButton.removeAttribute('disabled')
+                                    deleteButton.classList.remove('table_delete_button_loadState')
+                                    deleteButton.classList.add('table_delete_button_pen')
+                                }, 300)
+                            })
+                            buttonContainer.append(deleteButton)
+                            td.append(buttonContainer)
+                            break
+                    }
+                    tr.append(td)
                 }
-                tr.append(td)
+                table.append(tr)
             }
-            table.append(tr)
         }
 
     }
@@ -576,7 +592,7 @@
         createClientMethod(name, surname, contacts, lastName)
         checkElementForDelete('table_row')
         setTimeout(()=>{
-            showTable('','','',false)
+            showTable('','','',true)
             // location.reload()
         }, 100)
         checkElementForDelete('change_user_form_container')
@@ -624,7 +640,7 @@
         checkElementForDelete('table_row')
         checkElementForDelete('confirm_background')
         setTimeout(()=>{
-            showTable('','','',false)
+            showTable('','','',true)
         }, 100)
     }
 
@@ -636,9 +652,13 @@
         headerContainer.append(spanId)
         const userData = await getClients(userId)
 
-        form.children[0].children[1].value = userData.surname
-        form.children[0].children[2].value = userData.name
-        form.children[0].children[3].value = userData.lastName
+        form.children[0].children[2].children[0].children[1].value = userData.surname
+        form.children[0].children[2].children[1].children[1].value = userData.name
+        form.children[0].children[2].children[2].value = userData.lastName
+        const hints = document.querySelectorAll('.redstar')
+        for(let hint of hints) {
+            hint.remove()
+        }
         let contacts = []
         for(let i = 0; i < userData.contacts.length; i++) {
             let contact = addContact()
@@ -652,15 +672,15 @@
 
         const changeClientButton = form.children[0].children[4].children[0]
         changeClientButton.addEventListener('click', ()=> {
-            const surname = form.children[0].children[1].value
-            const name = form.children[0].children[2].value
-            const lastName = form.children[0].children[3].value
+            const surname = form.children[0].children[2].children[0].children[1].value
+            const name = form.children[0].children[2].children[1].children[1].value
+            const lastName = form.children[0].children[2].children[2].value
             contacts = createContacts()
             changeClientInformation(userId, name, surname, lastName, contacts)
             checkElementForDelete('table_row')
             checkElementForDelete('change_user_form_container')
             setTimeout(()=>{
-                showTable('','','',false)
+                showTable('','','',true)
             }, 100)
         })
         const deleteUserButton = form.children[0].children[4].children[1]
